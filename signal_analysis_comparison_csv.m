@@ -6,10 +6,7 @@ clear all; close all; clc;
 % CSV 파일 선택
 [filename, pathname] = uigetfile('*.csv', 'CSV 신호 파일 선택');
 if isequal(filename, 0)
-    % 파일을 선택하지 않은 경우 기본 파일 사용
-    filename = 'test_signal_complex.csv';
-    pathname = './';
-    fprintf('기본 파일 사용: %s\n', filename);
+    error('CSV 파일을 선택해주세요.');
 end
 
 filepath = fullfile(pathname, filename);
