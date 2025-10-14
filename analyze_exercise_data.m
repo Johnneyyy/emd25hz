@@ -1,6 +1,6 @@
-%% Exercise Data Analysis and PowerPoint Report Generator
+%% Exercise Data Analysis and HTML Report Generator
 % This script analyzes AAALogging_*.csv files containing exercise data
-% and generates a comprehensive PowerPoint presentation with results.
+% and generates a comprehensive HTML report with results.
 %
 % Requirements:
 % - MATLAB R2016b or later
@@ -38,12 +38,12 @@ function analyze_exercise_data()
     
     fprintf('\nAnalysis complete!\n\n');
     
-    %% 3. Generate PowerPoint presentation
-    fprintf('Step 3: Generating PowerPoint presentation...\n');
-    generate_powerpoint(results);
+    %% 3. Generate HTML report
+    fprintf('Step 3: Generating HTML report...\n');
+    generate_html_report(results);
     
     fprintf('\n=== Analysis Complete ===\n');
-    fprintf('PowerPoint file saved as: exercise_analysis_report.pptx\n');
+    fprintf('HTML report saved as: exercise_analysis_report.html\n');
 end
 
 %% Function to find all AAALogging_*.csv files recursively
@@ -247,38 +247,69 @@ function spectrograms = generate_spectrograms(acc_x, acc_y, acc_z, file_name)
     saveas(fig_mag, spectrograms.magnitude_image_path);
 end
 
-%% Function to generate PowerPoint presentation
-function generate_powerpoint(results)
-    % Import required Java classes for PowerPoint generation
-    import mlreportgen.ppt.*;
+%% Function to generate HTML report
+function generate_html_report(results)
+    % Create HTML report file
+    html_file = 'exercise_analysis_report.html';
+    fid = fopen(html_file, 'w');
     
-    % Create presentation
-    ppt_file = 'exercise_analysis_report.pptx';
-    ppt = Presentation(ppt_file);
-    open(ppt);
+    % Write HTML header
+    fprintf(fid, '<!DOCTYPE html>\n');
+    fprintf(fid, '<html lang="ko">\n');
+    fprintf(fid, '<head>\n');
+    fprintf(fid, '    <meta charset="UTF-8">\n');
+    fprintf(fid, '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n');
+    fprintf(fid, '    <title>Exercise Data Analysis Report</title>\n');
+    fprintf(fid, '    <style>\n');
+    fprintf(fid, '        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n');
+    fprintf(fid, '        .container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }\n');
+    fprintf(fid, '        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }\n');
+    fprintf(fid, '        h2 { color: #34495e; margin-top: 30px; border-left: 4px solid #3498db; padding-left: 10px; }\n');
+    fprintf(fid, '        .summary { background-color: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0; }\n');
+    fprintf(fid, '        .analysis-section { margin: 30px 0; padding: 20px; border: 1px solid #bdc3c7; border-radius: 5px; }\n');
+    fprintf(fid, '        .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }\n');
+    fprintf(fid, '        .metric-item { background-color: #f8f9fa; padding: 10px; border-left: 3px solid #3498db; }\n');
+    fprintf(fid, '        .metric-label { font-weight: bold; color: #555; }\n');
+    fprintf(fid, '        .metric-value { color: #2c3e50; }\n');
+    fprintf(fid, '        .intensity-high { color: #e74c3c; font-weight: bold; }\n');
+    fprintf(fid, '        .intensity-moderate { color: #f39c12; font-weight: bold; }\n');
+    fprintf(fid, '        .intensity-low { color: #27ae60; font-weight: bold; }\n');
+    fprintf(fid, '        img { max-width: 100%%; height: auto; margin: 10px 0; border: 1px solid #ddd; }\n');
+    fprintf(fid, '        table { width: 100%%; border-collapse: collapse; margin: 20px 0; }\n');
+    fprintf(fid, '        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n');
+    fprintf(fid, '        th { background-color: #3498db; color: white; }\n');
+    fprintf(fid, '        tr:hover { background-color: #f5f5f5; }\n');
+    fprintf(fid, '        .page-break { page-break-after: always; }\n');
+    fprintf(fid, '        @media print { .page-break { page-break-after: always; } }\n');
+    fprintf(fid, '    </style>\n');
+    fprintf(fid, '</head>\n');
+    fprintf(fid, '<body>\n');
+    fprintf(fid, '    <div class="container">\n');
     
-    % Slide 1: Summary Page
-    add_summary_slide(ppt, results);
+    % Add summary section
+    add_html_summary(fid, results);
     
-    % Slides 2-N: Individual analysis pages
+    % Add individual analysis sections
     for i = 1:length(results)
         if results{i}.success
-            add_analysis_slide(ppt, results{i}, i);
+            add_html_analysis(fid, results{i}, i);
         end
     end
     
-    % Close and save presentation
-    close(ppt);
+    % Close HTML
+    fprintf(fid, '    </div>\n');
+    fprintf(fid, '</body>\n');
+    fprintf(fid, '</html>\n');
     
-    fprintf('PowerPoint presentation saved: %s\n', ppt_file);
+    fclose(fid);
+    fprintf('HTML report saved: %s\n', html_file);
 end
 
-%% Function to add summary slide
-function add_summary_slide(ppt, results)
-    slide = add(ppt, 'Title and Content');
-    
+%% Function to add HTML summary section
+function add_html_summary(fid, results)
     % Add title
-    replace(slide, 'Title', 'Exercise Data Analysis - Summary');
+    fprintf(fid, '        <h1>Exercise Data Analysis - Summary</h1>\n');
+    fprintf(fid, '        <p>Generated on: %s</p>\n', datestr(now, 'yyyy-mm-dd HH:MM:SS'));
     
     % Prepare summary content
     num_files = length(results);
@@ -310,75 +341,111 @@ function add_summary_slide(ppt, results)
         intensity_counts = struct('Low', 0, 'Moderate', 0, 'High', 0);
     end
     
-    % Create summary text
-    summary_text = sprintf(['Analysis Summary\n\n' ...
-                           'Total Files Analyzed: %d\n' ...
-                           'Successfully Processed: %d\n' ...
-                           'Failed: %d\n\n' ...
-                           'Overall Statistics:\n' ...
-                           '  Average RMS (Total): %.4f\n' ...
-                           '  Average SMA: %.4f\n' ...
-                           '  Average Magnitude: %.4f\n\n' ...
-                           'Intensity Distribution:\n' ...
-                           '  Low Intensity: %d files\n' ...
-                           '  Moderate Intensity: %d files\n' ...
-                           '  High Intensity: %d files\n'], ...
-                           num_files, num_success, num_failed, ...
-                           avg_rms, avg_sma, avg_magnitude_mean, ...
-                           intensity_counts.Low, intensity_counts.Moderate, intensity_counts.High);
-    
-    % Add content
-    replace(slide, 'Content', summary_text);
+    % Create summary section
+    fprintf(fid, '        <div class="summary">\n');
+    fprintf(fid, '            <h2>Summary Statistics</h2>\n');
+    fprintf(fid, '            <table>\n');
+    fprintf(fid, '                <tr><th>Metric</th><th>Value</th></tr>\n');
+    fprintf(fid, '                <tr><td>Total Files Analyzed</td><td>%d</td></tr>\n', num_files);
+    fprintf(fid, '                <tr><td>Successfully Processed</td><td>%d</td></tr>\n', num_success);
+    fprintf(fid, '                <tr><td>Failed</td><td>%d</td></tr>\n', num_failed);
+    fprintf(fid, '                <tr><td>Average RMS (Total)</td><td>%.4f</td></tr>\n', avg_rms);
+    fprintf(fid, '                <tr><td>Average SMA</td><td>%.4f</td></tr>\n', avg_sma);
+    fprintf(fid, '                <tr><td>Average Magnitude</td><td>%.4f</td></tr>\n', avg_magnitude_mean);
+    fprintf(fid, '            </table>\n');
+    fprintf(fid, '            <h3>Intensity Distribution</h3>\n');
+    fprintf(fid, '            <table>\n');
+    fprintf(fid, '                <tr><th>Intensity Level</th><th>Number of Files</th></tr>\n');
+    fprintf(fid, '                <tr><td class="intensity-low">Low Intensity</td><td>%d</td></tr>\n', intensity_counts.Low);
+    fprintf(fid, '                <tr><td class="intensity-moderate">Moderate Intensity</td><td>%d</td></tr>\n', intensity_counts.Moderate);
+    fprintf(fid, '                <tr><td class="intensity-high">High Intensity</td><td>%d</td></tr>\n', intensity_counts.High);
+    fprintf(fid, '            </table>\n');
+    fprintf(fid, '        </div>\n');
+    fprintf(fid, '        <div class="page-break"></div>\n');
 end
 
-%% Function to add individual analysis slide
-function add_analysis_slide(ppt, result, index)
-    slide = add(ppt, 'Title and Content');
-    
-    % Add title
-    title_text = sprintf('Analysis Results - %s', result.file_name);
-    replace(slide, 'Title', title_text);
-    
+%% Function to add individual HTML analysis section
+function add_html_analysis(fid, result, index)
     % Prepare metrics content
     m = result.metrics;
     
-    content_text = sprintf(['File: %s\n' ...
-                           'Samples: %d\n\n' ...
-                           'Intensity Level: %s\n\n' ...
-                           'Key Metrics:\n' ...
-                           '  Magnitude: Mean=%.4f, Std=%.4f, Max=%.4f\n' ...
-                           '  RMS: X=%.4f, Y=%.4f, Z=%.4f, Total=%.4f\n' ...
-                           '  SMA: %.4f\n' ...
-                           '  Energy Total: %.2f\n' ...
-                           '  Movement Variability: %.2f%%\n\n' ...
-                           'Axis Statistics:\n' ...
-                           '  Variance: X=%.4f, Y=%.4f, Z=%.4f\n' ...
-                           '  Peak-to-Peak: X=%.4f, Y=%.4f, Z=%.4f\n' ...
-                           '  Zero Crossing Rate: X=%.4f, Y=%.4f, Z=%.4f\n\n' ...
-                           'Correlations:\n' ...
-                           '  X-Y: %.4f, X-Z: %.4f, Y-Z: %.4f\n'], ...
-                           result.file_name, result.num_samples, m.intensity_level, ...
-                           m.magnitude_mean, m.magnitude_std, m.magnitude_max, ...
-                           m.rms_x, m.rms_y, m.rms_z, m.rms_total, ...
-                           m.sma, m.energy_total, m.movement_variability, ...
-                           m.var_x, m.var_y, m.var_z, ...
-                           m.p2p_x, m.p2p_y, m.p2p_z, ...
-                           m.zcr_x, m.zcr_y, m.zcr_z, ...
-                           m.corr_xy, m.corr_xz, m.corr_yz);
+    % Determine intensity class
+    intensity_class = 'intensity-low';
+    if strcmp(m.intensity_level, 'Moderate')
+        intensity_class = 'intensity-moderate';
+    elseif strcmp(m.intensity_level, 'High')
+        intensity_class = 'intensity-high';
+    end
     
-    replace(slide, 'Content', content_text);
+    % Add analysis section
+    fprintf(fid, '        <div class="analysis-section">\n');
+    fprintf(fid, '            <h2>Analysis Results - %s</h2>\n', result.file_name);
+    fprintf(fid, '            <p><strong>File:</strong> %s</p>\n', result.file_name);
+    fprintf(fid, '            <p><strong>Samples:</strong> %d</p>\n', result.num_samples);
+    fprintf(fid, '            <p><strong>Intensity Level:</strong> <span class="%s">%s</span></p>\n', intensity_class, m.intensity_level);
     
-    % Add spectrogram slide
-    slide_spec = add(ppt, 'Title and Content');
-    replace(slide_spec, 'Title', sprintf('Spectrograms - %s', result.file_name));
+    % Key Metrics
+    fprintf(fid, '            <h3>Key Metrics</h3>\n');
+    fprintf(fid, '            <div class="metrics">\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">Magnitude Mean:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_mean);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">Magnitude Std:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_std);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">Magnitude Max:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_max);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">RMS Total:</span> <span class="metric-value">%.4f</span>\n', m.rms_total);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">SMA:</span> <span class="metric-value">%.4f</span>\n', m.sma);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">Energy Total:</span> <span class="metric-value">%.2f</span>\n', m.energy_total);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '                <div class="metric-item">\n');
+    fprintf(fid, '                    <span class="metric-label">Movement Variability:</span> <span class="metric-value">%.2f%%</span>\n', m.movement_variability);
+    fprintf(fid, '                </div>\n');
+    fprintf(fid, '            </div>\n');
+    
+    % RMS per axis
+    fprintf(fid, '            <h3>RMS per Axis</h3>\n');
+    fprintf(fid, '            <table>\n');
+    fprintf(fid, '                <tr><th>Axis</th><th>RMS</th></tr>\n');
+    fprintf(fid, '                <tr><td>X</td><td>%.4f</td></tr>\n', m.rms_x);
+    fprintf(fid, '                <tr><td>Y</td><td>%.4f</td></tr>\n', m.rms_y);
+    fprintf(fid, '                <tr><td>Z</td><td>%.4f</td></tr>\n', m.rms_z);
+    fprintf(fid, '            </table>\n');
+    
+    % Axis Statistics
+    fprintf(fid, '            <h3>Axis Statistics</h3>\n');
+    fprintf(fid, '            <table>\n');
+    fprintf(fid, '                <tr><th>Metric</th><th>X</th><th>Y</th><th>Z</th></tr>\n');
+    fprintf(fid, '                <tr><td>Variance</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.var_x, m.var_y, m.var_z);
+    fprintf(fid, '                <tr><td>Peak-to-Peak</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.p2p_x, m.p2p_y, m.p2p_z);
+    fprintf(fid, '                <tr><td>Zero Crossing Rate</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.zcr_x, m.zcr_y, m.zcr_z);
+    fprintf(fid, '            </table>\n');
+    
+    % Correlations
+    fprintf(fid, '            <h3>Correlations</h3>\n');
+    fprintf(fid, '            <table>\n');
+    fprintf(fid, '                <tr><th>Axes</th><th>Correlation</th></tr>\n');
+    fprintf(fid, '                <tr><td>X-Y</td><td>%.4f</td></tr>\n', m.corr_xy);
+    fprintf(fid, '                <tr><td>X-Z</td><td>%.4f</td></tr>\n', m.corr_xz);
+    fprintf(fid, '                <tr><td>Y-Z</td><td>%.4f</td></tr>\n', m.corr_yz);
+    fprintf(fid, '            </table>\n');
     
     % Add spectrogram images
+    fprintf(fid, '            <h3>Spectrograms</h3>\n');
     if isfield(result.spectrograms, 'image_path') && exist(result.spectrograms.image_path, 'file')
-        pic = Picture(result.spectrograms.image_path);
-        pic.X = '1in';
-        pic.Y = '1.5in';
-        pic.Width = '8in';
-        pic.Height = '5in';
-        replace(slide_spec, 'Content', pic);
+        fprintf(fid, '            <img src="%s" alt="Spectrogram - %s">\n', result.spectrograms.image_path, result.file_name);
     end
+    if isfield(result.spectrograms, 'magnitude_image_path') && exist(result.spectrograms.magnitude_image_path, 'file')
+        fprintf(fid, '            <img src="%s" alt="Magnitude Spectrogram - %s">\n', result.spectrograms.magnitude_image_path, result.file_name);
+    end
+    
+    fprintf(fid, '        </div>\n');
+    fprintf(fid, '        <div class="page-break"></div>\n');
 end

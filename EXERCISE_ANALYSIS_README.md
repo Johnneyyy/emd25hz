@@ -2,16 +2,16 @@
 
 ## 개요 (Overview)
 
-이 MATLAB 스크립트는 운동 데이터를 자동으로 분석하고 PowerPoint 보고서를 생성합니다.
+이 MATLAB 스크립트는 운동 데이터를 자동으로 분석하고 HTML 보고서를 생성합니다.
 
-This MATLAB script automatically analyzes exercise data and generates a PowerPoint report.
+This MATLAB script automatically analyzes exercise data and generates an HTML report.
 
 ## 기능 (Features)
 
 1. **자동 파일 검색**: 모든 하위 폴더에서 "AAALogging_*.csv" 파일을 자동으로 찾습니다
 2. **운동 강도 분석**: 다양한 운동 강도 지표를 계산합니다
 3. **스펙트로그램 생성**: 가속도 데이터의 주파수 분석을 수행합니다
-4. **자동 PPT 생성**: 분석 결과를 PowerPoint 프레젠테이션으로 자동 생성합니다
+4. **자동 HTML 보고서 생성**: 분석 결과를 HTML 보고서로 자동 생성합니다 (별도의 툴박스 불필요)
 
 ## 요구사항 (Requirements)
 
@@ -65,9 +65,10 @@ This MATLAB script automatically analyzes exercise data and generates a PowerPoi
 
 스크립트 실행 후 다음 파일들이 생성됩니다:
 
-1. **exercise_analysis_report.pptx**: 전체 분석 보고서
-   - 첫 페이지: 전체 요약 (Summary)
-   - 이후 페이지: 각 CSV 파일별 상세 분석 결과
+1. **exercise_analysis_report.html**: 전체 분석 보고서
+   - 요약 섹션: 전체 요약 (Summary)
+   - 개별 분석 섹션: 각 CSV 파일별 상세 분석 결과
+   - 웹 브라우저로 열람 가능, 인쇄 및 PDF 변환 지원
 
 2. **spectrogram_*.png**: 각 파일별 스펙트로그램 이미지
    - 3축 가속도 (Acc_X, Acc_Y, Acc_Z) 스펙트로그램
@@ -89,7 +90,7 @@ analyze_exercise_data
 
 % 완료 후 다음 메시지가 표시됩니다:
 % === Analysis Complete ===
-% PowerPoint file saved as: exercise_analysis_report.pptx
+% HTML report saved as: exercise_analysis_report.html
 ```
 
 ## 문제 해결 (Troubleshooting)
@@ -102,9 +103,10 @@ analyze_exercise_data
 - CSV 파일에 Acc_X, Acc_Y, Acc_Z 컬럼이 있는지 확인하세요
 - 컬럼명의 대소문자가 정확한지 확인하세요
 
-### PowerPoint 생성 오류
-- MATLAB Report Generator가 설치되어 있는지 확인하세요
-- `ver` 명령으로 설치된 툴박스를 확인할 수 있습니다
+### HTML 보고서 생성 오류
+- 생성된 HTML 파일이 현재 디렉토리에 있는지 확인하세요
+- 스펙트로그램 이미지 파일이 올바르게 생성되었는지 확인하세요
+- 웹 브라우저에서 파일을 열 수 없는 경우, 파일 경로에 특수문자가 없는지 확인하세요
 
 ## 커스터마이징 (Customization)
 

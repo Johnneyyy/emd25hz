@@ -19,7 +19,7 @@ run_example
 이 명령은 자동으로:
 - 샘플 운동 데이터 생성 (걷기, 조깅, 달리기)
 - 데이터 분석 수행
-- PowerPoint 보고서 생성
+- HTML 보고서 생성
 
 ### 옵션 2: 실제 데이터 분석
 
@@ -36,9 +36,10 @@ run_example
 
 분석 완료 후 다음 파일들이 생성됩니다:
 
-1. **exercise_analysis_report.pptx**
-   - 페이지 1: 전체 요약 (파일 개수, 평균 통계, 강도 분포)
-   - 페이지 2~N: 각 파일별 상세 분석 및 스펙트로그램
+1. **exercise_analysis_report.html**
+   - 요약 섹션: 전체 요약 (파일 개수, 평균 통계, 강도 분포)
+   - 분석 섹션: 각 파일별 상세 분석 및 스펙트로그램
+   - 웹 브라우저로 열람, 인쇄 및 PDF 변환 가능
 
 2. **spectrogram_*.png**
    - 각 운동 데이터의 주파수 분석 이미지
@@ -90,10 +91,10 @@ timestamp,Acc_X,Acc_Y,Acc_Z
 - 파일명이 `AAALogging_`로 시작하는지 확인
 - 현재 폴더 또는 하위 폴더에 파일이 있는지 확인
 
-### PowerPoint 생성 오류
-- MATLAB Report Generator 툴박스 확인:
+### HTML 보고서 열람 문제
+- 기본 웹 브라우저에서 HTML 파일 열기:
   ```matlab
-  ver
+  web('exercise_analysis_report.html')
   ```
 
 ### 메모리 부족
@@ -107,6 +108,7 @@ timestamp,Acc_X,Acc_Y,Acc_Z
 ## 🎯 다음 단계
 
 1. ✅ `run_example` 실행하여 동작 확인
-2. ✅ 생성된 PPT 파일 확인
+2. ✅ 생성된 HTML 보고서를 웹 브라우저에서 확인
 3. ✅ 실제 데이터로 분석 수행
 4. ✅ 필요시 파라미터 조정 및 커스터마이징
+5. ✅ HTML을 PDF로 변환하여 공유 (브라우저 인쇄 기능 사용)
