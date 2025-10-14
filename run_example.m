@@ -37,14 +37,15 @@ try
     fprintf('========================================\n\n');
     
     fprintf('Output files:\n');
-    fprintf('  - exercise_analysis_report.html (HTML report)\n');
+    fprintf('  - exercise_analysis_report.pptx (PowerPoint presentation)\n');
+    fprintf('  - excel_exports/*.xlsx (Excel files for each exercise)\n');
     fprintf('  - spectrogram_*.png (Spectrogram images)\n\n');
     
     fprintf('Next steps:\n');
-    fprintf('  1. Open exercise_analysis_report.html in a web browser to view the results\n');
-    fprintf('  2. Review the spectrograms for frequency analysis\n');
-    fprintf('  3. Replace sample data with your own AAALogging_*.csv files\n');
-    fprintf('  4. To convert HTML to PDF: Use browser print function (Ctrl+P > Save as PDF)\n\n');
+    fprintf('  1. Open exercise_analysis_report.pptx to view the PowerPoint presentation\n');
+    fprintf('  2. Open excel_exports/ folder to view individual Excel analysis files\n');
+    fprintf('  3. Review the spectrograms for frequency analysis\n');
+    fprintf('  4. Replace sample data with your own AAALogging_*.csv files\n\n');
     
 catch ME
     fprintf('\n========================================\n');

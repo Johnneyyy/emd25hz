@@ -1,6 +1,6 @@
-%% Exercise Data Analysis and HTML Report Generator
+%% Exercise Data Analysis and PowerPoint/Excel Report Generator
 % This script analyzes AAALogging_*.csv files containing exercise data
-% and generates a comprehensive HTML report with results.
+% and generates a comprehensive PowerPoint presentation and Excel exports.
 %
 % Requirements:
 % - MATLAB R2016b or later
@@ -38,12 +38,17 @@ function analyze_exercise_data()
     
     fprintf('\nAnalysis complete!\n\n');
     
-    %% 3. Generate HTML report
-    fprintf('Step 3: Generating HTML report...\n');
-    generate_html_report(results);
+    %% 3. Export to Excel
+    fprintf('Step 3: Exporting results to Excel...\n');
+    export_results_to_excel(results);
+    
+    %% 4. Generate PowerPoint report
+    fprintf('\nStep 4: Generating PowerPoint presentation...\n');
+    generate_ppt_report(results);
     
     fprintf('\n=== Analysis Complete ===\n');
-    fprintf('HTML report saved as: exercise_analysis_report.html\n');
+    fprintf('PowerPoint report saved as: exercise_analysis_report.pptx\n');
+    fprintf('Excel files saved in: excel_exports/\n');
 end
 
 %% Function to find all AAALogging_*.csv files recursively
@@ -247,76 +252,291 @@ function spectrograms = generate_spectrograms(acc_x, acc_y, acc_z, file_name)
     saveas(fig_mag, spectrograms.magnitude_image_path);
 end
 
-%% Function to generate HTML report
-function generate_html_report(results)
-    % Create HTML report file
-    html_file = 'exercise_analysis_report.html';
-    fid = fopen(html_file, 'w');
-    
-    % Write HTML header
-    fprintf(fid, '<!DOCTYPE html>\n');
-    fprintf(fid, '<html lang="ko">\n');
-    fprintf(fid, '<head>\n');
-    fprintf(fid, '    <meta charset="UTF-8">\n');
-    fprintf(fid, '    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n');
-    fprintf(fid, '    <title>Exercise Data Analysis Report</title>\n');
-    fprintf(fid, '    <style>\n');
-    fprintf(fid, '        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n');
-    fprintf(fid, '        .container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }\n');
-    fprintf(fid, '        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }\n');
-    fprintf(fid, '        h2 { color: #34495e; margin-top: 30px; border-left: 4px solid #3498db; padding-left: 10px; }\n');
-    fprintf(fid, '        .summary { background-color: #ecf0f1; padding: 20px; border-radius: 5px; margin: 20px 0; }\n');
-    fprintf(fid, '        .analysis-section { margin: 30px 0; padding: 20px; border: 1px solid #bdc3c7; border-radius: 5px; }\n');
-    fprintf(fid, '        .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }\n');
-    fprintf(fid, '        .metric-item { background-color: #f8f9fa; padding: 10px; border-left: 3px solid #3498db; }\n');
-    fprintf(fid, '        .metric-label { font-weight: bold; color: #555; }\n');
-    fprintf(fid, '        .metric-value { color: #2c3e50; }\n');
-    fprintf(fid, '        .intensity-high { color: #e74c3c; font-weight: bold; }\n');
-    fprintf(fid, '        .intensity-moderate { color: #f39c12; font-weight: bold; }\n');
-    fprintf(fid, '        .intensity-low { color: #27ae60; font-weight: bold; }\n');
-    fprintf(fid, '        img { max-width: 100%%; height: auto; margin: 10px 0; border: 1px solid #ddd; }\n');
-    fprintf(fid, '        table { width: 100%%; border-collapse: collapse; margin: 20px 0; }\n');
-    fprintf(fid, '        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n');
-    fprintf(fid, '        th { background-color: #3498db; color: white; }\n');
-    fprintf(fid, '        tr:hover { background-color: #f5f5f5; }\n');
-    fprintf(fid, '        .page-break { page-break-after: always; }\n');
-    fprintf(fid, '        @media print { .page-break { page-break-after: always; } }\n');
-    fprintf(fid, '    </style>\n');
-    fprintf(fid, '</head>\n');
-    fprintf(fid, '<body>\n');
-    fprintf(fid, '    <div class="container">\n');
-    
-    % Add summary section
-    add_html_summary(fid, results);
-    
-    % Add individual analysis sections
-    for i = 1:length(results)
-        if results{i}.success
-            add_html_analysis(fid, results{i}, i);
-        end
+%% Function to export results to Excel
+function export_results_to_excel(results)
+    % Create output directory for Excel files
+    excel_dir = 'excel_exports';
+    if ~exist(excel_dir, 'dir')
+        mkdir(excel_dir);
     end
     
-    % Close HTML
-    fprintf(fid, '    </div>\n');
-    fprintf(fid, '</body>\n');
-    fprintf(fid, '</html>\n');
-    
-    fclose(fid);
-    fprintf('HTML report saved: %s\n', html_file);
+    % Export each exercise result to a separate Excel file
+    for i = 1:length(results)
+        if ~results{i}.success
+            continue;
+        end
+        
+        result = results{i};
+        excel_file = fullfile(excel_dir, sprintf('%s_analysis.xlsx', result.file_name));
+        
+        try
+            % Create Excel COM object
+            Excel = actxserver('Excel.Application');
+            Excel.Visible = 0; % Don't show Excel window
+            
+            % Create new workbook
+            Workbooks = Excel.Workbooks;
+            Workbook = Workbooks.Add();
+            
+            % Sheet 1: Summary Metrics
+            Sheet1 = Workbook.Worksheets.Item(1);
+            Sheet1.Name = 'Summary Metrics';
+            add_excel_summary(Sheet1, result);
+            
+            % Sheet 2: Detailed Statistics
+            Sheet2 = Workbook.Worksheets.Add([], Sheet1);
+            Sheet2.Name = 'Detailed Stats';
+            add_excel_detailed_stats(Sheet2, result);
+            
+            % Sheet 3: Raw Data
+            Sheet3 = Workbook.Worksheets.Add([], Sheet2);
+            Sheet3.Name = 'Raw Data';
+            add_excel_raw_data(Sheet3, result);
+            
+            % Save and close
+            Workbook.SaveAs(fullfile(pwd, excel_file));
+            Workbook.Close(false);
+            Excel.Quit();
+            delete(Excel);
+            
+            fprintf('  Exported: %s\n', excel_file);
+            
+        catch ME
+            warning('Error exporting to Excel: %s', ME.message);
+            try
+                Excel.Quit();
+                delete(Excel);
+            catch
+            end
+        end
+    end
 end
 
-%% Function to add HTML summary section
-function add_html_summary(fid, results)
-    % Add title
-    fprintf(fid, '        <h1>Exercise Data Analysis - Summary</h1>\n');
-    fprintf(fid, '        <p>Generated on: %s</p>\n', datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+%% Function to add summary metrics to Excel sheet
+function add_excel_summary(Sheet, result)
+    m = result.metrics;
     
-    % Prepare summary content
+    % Title
+    Sheet.Range('A1').Value = sprintf('Exercise Analysis: %s', result.file_name);
+    Sheet.Range('A1').Font.Size = 14;
+    Sheet.Range('A1').Font.Bold = true;
+    
+    % Basic info
+    row = 3;
+    Sheet.Range(sprintf('A%d', row)).Value = 'File Name:';
+    Sheet.Range(sprintf('B%d', row)).Value = result.file_name;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d', row)).Value = 'Number of Samples:';
+    Sheet.Range(sprintf('B%d', row)).Value = result.num_samples;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d', row)).Value = 'Intensity Level:';
+    Sheet.Range(sprintf('B%d', row)).Value = m.intensity_level;
+    
+    % Key Metrics section
+    row = row + 2;
+    Sheet.Range(sprintf('A%d', row)).Value = 'KEY METRICS';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    
+    metrics_data = {
+        'Magnitude Mean', m.magnitude_mean;
+        'Magnitude Std', m.magnitude_std;
+        'Magnitude Max', m.magnitude_max;
+        'Magnitude Min', m.magnitude_min;
+        'RMS Total', m.rms_total;
+        'SMA', m.sma;
+        'Energy Total', m.energy_total;
+        'Movement Variability (%)', m.movement_variability
+    };
+    
+    for i = 1:size(metrics_data, 1)
+        Sheet.Range(sprintf('A%d', row)).Value = metrics_data{i, 1};
+        Sheet.Range(sprintf('B%d', row)).Value = metrics_data{i, 2};
+        row = row + 1;
+    end
+    
+    % Auto-fit columns
+    Sheet.Columns.Item('A:B').AutoFit();
+end
+
+%% Function to add detailed statistics to Excel sheet
+function add_excel_detailed_stats(Sheet, result)
+    m = result.metrics;
+    
+    % Title
+    Sheet.Range('A1').Value = 'Detailed Statistics';
+    Sheet.Range('A1').Font.Size = 14;
+    Sheet.Range('A1').Font.Bold = true;
+    
+    % RMS per axis
+    row = 3;
+    Sheet.Range(sprintf('A%d', row)).Value = 'RMS PER AXIS';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row)).Value = {'Axis', 'RMS', ''};
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row+2)).Value = {
+        'X', m.rms_x, '';
+        'Y', m.rms_y, '';
+        'Z', m.rms_z, ''
+    };
+    
+    % Variance
+    row = row + 4;
+    Sheet.Range(sprintf('A%d', row)).Value = 'VARIANCE';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row+2)).Value = {
+        'X', m.var_x, '';
+        'Y', m.var_y, '';
+        'Z', m.var_z, ''
+    };
+    
+    % Peak-to-Peak
+    row = row + 4;
+    Sheet.Range(sprintf('A%d', row)).Value = 'PEAK-TO-PEAK';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row+2)).Value = {
+        'X', m.p2p_x, '';
+        'Y', m.p2p_y, '';
+        'Z', m.p2p_z, ''
+    };
+    
+    % Zero Crossing Rate
+    row = row + 4;
+    Sheet.Range(sprintf('A%d', row)).Value = 'ZERO CROSSING RATE';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row+2)).Value = {
+        'X', m.zcr_x, '';
+        'Y', m.zcr_y, '';
+        'Z', m.zcr_z, ''
+    };
+    
+    % Correlations
+    row = row + 4;
+    Sheet.Range(sprintf('A%d', row)).Value = 'CORRELATIONS';
+    Sheet.Range(sprintf('A%d', row)).Font.Bold = true;
+    row = row + 1;
+    Sheet.Range(sprintf('A%d:C%d', row, row+2)).Value = {
+        'X-Y', m.corr_xy, '';
+        'X-Z', m.corr_xz, '';
+        'Y-Z', m.corr_yz, ''
+    };
+    
+    % Auto-fit columns
+    Sheet.Columns.Item('A:C').AutoFit();
+end
+
+%% Function to add raw data to Excel sheet
+function add_excel_raw_data(Sheet, result)
+    % Title
+    Sheet.Range('A1').Value = 'Raw Acceleration Data';
+    Sheet.Range('A1').Font.Size = 14;
+    Sheet.Range('A1').Font.Bold = true;
+    
+    % Headers
+    Sheet.Range('A3:C3').Value = {'Acc_X', 'Acc_Y', 'Acc_Z'};
+    Sheet.Range('A3:C3').Font.Bold = true;
+    
+    % Data
+    num_samples = length(result.acc_x);
+    data = [result.acc_x, result.acc_y, result.acc_z];
+    
+    % Write data in chunks to avoid memory issues
+    chunk_size = 1000;
+    for i = 1:chunk_size:num_samples
+        end_idx = min(i + chunk_size - 1, num_samples);
+        start_row = i + 3;
+        end_row = end_idx + 3;
+        Sheet.Range(sprintf('A%d:C%d', start_row, end_row)).Value = data(i:end_idx, :);
+    end
+    
+    % Auto-fit columns
+    Sheet.Columns.Item('A:C').AutoFit();
+end
+
+%% Function to generate PowerPoint report
+function generate_ppt_report(results)
+    try
+        % Create PowerPoint COM object
+        PPT = actxserver('PowerPoint.Application');
+        PPT.Visible = 1; % Show PowerPoint window
+        
+        % Create new presentation
+        Presentations = PPT.Presentations;
+        Presentation = Presentations.Add();
+        
+        % Add title slide
+        add_ppt_title_slide(Presentation, results);
+        
+        % Add summary slide
+        add_ppt_summary_slide(Presentation, results);
+        
+        % Add slides for each exercise result
+        for i = 1:length(results)
+            if results{i}.success
+                add_ppt_exercise_slide(Presentation, results{i}, i);
+            end
+        end
+        
+        % Save presentation
+        ppt_file = fullfile(pwd, 'exercise_analysis_report.pptx');
+        Presentation.SaveAs(ppt_file);
+        
+        fprintf('PowerPoint report saved: %s\n', ppt_file);
+        
+        % Close PowerPoint
+        Presentation.Close();
+        PPT.Quit();
+        delete(PPT);
+        
+    catch ME
+        warning('Error creating PowerPoint presentation: %s', ME.message);
+        try
+            PPT.Quit();
+            delete(PPT);
+        catch
+        end
+        rethrow(ME);
+    end
+end
+
+%% Function to add title slide to PowerPoint
+function add_ppt_title_slide(Presentation, results)
+    % Add slide with title layout (layout 1)
+    Slide = Presentation.Slides.Add(1, 1);
+    
+    % Set title
+    Title = Slide.Shapes.Item(1);
+    Title.TextFrame.TextRange.Text = 'Exercise Data Analysis Report';
+    Title.TextFrame.TextRange.Font.Size = 44;
+    Title.TextFrame.TextRange.Font.Bold = true;
+    
+    % Set subtitle
+    Subtitle = Slide.Shapes.Item(2);
+    subtitle_text = sprintf('Generated on: %s\nTotal Exercises Analyzed: %d', ...
+        datestr(now, 'yyyy-mm-dd HH:MM:SS'), ...
+        length(results));
+    Subtitle.TextFrame.TextRange.Text = subtitle_text;
+    Subtitle.TextFrame.TextRange.Font.Size = 24;
+end
+
+%% Function to add summary slide to PowerPoint
+function add_ppt_summary_slide(Presentation, results)
+    % Add slide with title and content layout (layout 2)
+    Slide = Presentation.Slides.Add(Presentation.Slides.Count + 1, 2);
+    
+    % Set title
+    Title = Slide.Shapes.Item(1);
+    Title.TextFrame.TextRange.Text = 'Summary Statistics';
+    
+    % Calculate statistics
     num_files = length(results);
     num_success = sum(cellfun(@(r) isfield(r, 'success') && r.success, results));
     num_failed = num_files - num_success;
     
-    % Calculate overall statistics
     all_metrics = {};
     for i = 1:length(results)
         if results{i}.success
@@ -341,111 +561,76 @@ function add_html_summary(fid, results)
         intensity_counts = struct('Low', 0, 'Moderate', 0, 'High', 0);
     end
     
-    % Create summary section
-    fprintf(fid, '        <div class="summary">\n');
-    fprintf(fid, '            <h2>Summary Statistics</h2>\n');
-    fprintf(fid, '            <table>\n');
-    fprintf(fid, '                <tr><th>Metric</th><th>Value</th></tr>\n');
-    fprintf(fid, '                <tr><td>Total Files Analyzed</td><td>%d</td></tr>\n', num_files);
-    fprintf(fid, '                <tr><td>Successfully Processed</td><td>%d</td></tr>\n', num_success);
-    fprintf(fid, '                <tr><td>Failed</td><td>%d</td></tr>\n', num_failed);
-    fprintf(fid, '                <tr><td>Average RMS (Total)</td><td>%.4f</td></tr>\n', avg_rms);
-    fprintf(fid, '                <tr><td>Average SMA</td><td>%.4f</td></tr>\n', avg_sma);
-    fprintf(fid, '                <tr><td>Average Magnitude</td><td>%.4f</td></tr>\n', avg_magnitude_mean);
-    fprintf(fid, '            </table>\n');
-    fprintf(fid, '            <h3>Intensity Distribution</h3>\n');
-    fprintf(fid, '            <table>\n');
-    fprintf(fid, '                <tr><th>Intensity Level</th><th>Number of Files</th></tr>\n');
-    fprintf(fid, '                <tr><td class="intensity-low">Low Intensity</td><td>%d</td></tr>\n', intensity_counts.Low);
-    fprintf(fid, '                <tr><td class="intensity-moderate">Moderate Intensity</td><td>%d</td></tr>\n', intensity_counts.Moderate);
-    fprintf(fid, '                <tr><td class="intensity-high">High Intensity</td><td>%d</td></tr>\n', intensity_counts.High);
-    fprintf(fid, '            </table>\n');
-    fprintf(fid, '        </div>\n');
-    fprintf(fid, '        <div class="page-break"></div>\n');
+    % Add content textbox
+    Content = Slide.Shapes.Item(2);
+    content_text = sprintf(['Overall Statistics:\n\n', ...
+        '• Total Files: %d\n', ...
+        '• Successfully Processed: %d\n', ...
+        '• Failed: %d\n\n', ...
+        'Average Metrics:\n', ...
+        '• RMS Total: %.4f\n', ...
+        '• SMA: %.4f\n', ...
+        '• Magnitude Mean: %.4f\n\n', ...
+        'Intensity Distribution:\n', ...
+        '• Low: %d exercises\n', ...
+        '• Moderate: %d exercises\n', ...
+        '• High: %d exercises'], ...
+        num_files, num_success, num_failed, ...
+        avg_rms, avg_sma, avg_magnitude_mean, ...
+        intensity_counts.Low, intensity_counts.Moderate, intensity_counts.High);
+    
+    Content.TextFrame.TextRange.Text = content_text;
+    Content.TextFrame.TextRange.Font.Size = 18;
 end
 
-%% Function to add individual HTML analysis section
-function add_html_analysis(fid, result, index)
-    % Prepare metrics content
+%% Function to add exercise analysis slide to PowerPoint
+function add_ppt_exercise_slide(Presentation, result, index)
     m = result.metrics;
     
-    % Determine intensity class
-    intensity_class = 'intensity-low';
-    if strcmp(m.intensity_level, 'Moderate')
-        intensity_class = 'intensity-moderate';
-    elseif strcmp(m.intensity_level, 'High')
-        intensity_class = 'intensity-high';
-    end
+    % Add slide with title and content layout
+    Slide = Presentation.Slides.Add(Presentation.Slides.Count + 1, 2);
     
-    % Add analysis section
-    fprintf(fid, '        <div class="analysis-section">\n');
-    fprintf(fid, '            <h2>Analysis Results - %s</h2>\n', result.file_name);
-    fprintf(fid, '            <p><strong>File:</strong> %s</p>\n', result.file_name);
-    fprintf(fid, '            <p><strong>Samples:</strong> %d</p>\n', result.num_samples);
-    fprintf(fid, '            <p><strong>Intensity Level:</strong> <span class="%s">%s</span></p>\n', intensity_class, m.intensity_level);
+    % Set title
+    Title = Slide.Shapes.Item(1);
+    Title.TextFrame.TextRange.Text = sprintf('Exercise Analysis: %s', result.file_name);
     
-    % Key Metrics
-    fprintf(fid, '            <h3>Key Metrics</h3>\n');
-    fprintf(fid, '            <div class="metrics">\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">Magnitude Mean:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_mean);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">Magnitude Std:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_std);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">Magnitude Max:</span> <span class="metric-value">%.4f</span>\n', m.magnitude_max);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">RMS Total:</span> <span class="metric-value">%.4f</span>\n', m.rms_total);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">SMA:</span> <span class="metric-value">%.4f</span>\n', m.sma);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">Energy Total:</span> <span class="metric-value">%.2f</span>\n', m.energy_total);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '                <div class="metric-item">\n');
-    fprintf(fid, '                    <span class="metric-label">Movement Variability:</span> <span class="metric-value">%.2f%%</span>\n', m.movement_variability);
-    fprintf(fid, '                </div>\n');
-    fprintf(fid, '            </div>\n');
+    % Add metrics content
+    Content = Slide.Shapes.Item(2);
+    content_text = sprintf(['File: %s\n', ...
+        'Samples: %d\n', ...
+        'Intensity Level: %s\n\n', ...
+        'Key Metrics:\n', ...
+        '• Magnitude Mean: %.4f\n', ...
+        '• Magnitude Std: %.4f\n', ...
+        '• RMS Total: %.4f\n', ...
+        '• SMA: %.4f\n', ...
+        '• Energy Total: %.2f\n\n', ...
+        'RMS per Axis:\n', ...
+        '• X: %.4f  Y: %.4f  Z: %.4f\n\n', ...
+        'Correlations:\n', ...
+        '• X-Y: %.4f  X-Z: %.4f  Y-Z: %.4f'], ...
+        result.file_name, result.num_samples, m.intensity_level, ...
+        m.magnitude_mean, m.magnitude_std, m.rms_total, m.sma, m.energy_total, ...
+        m.rms_x, m.rms_y, m.rms_z, ...
+        m.corr_xy, m.corr_xz, m.corr_yz);
     
-    % RMS per axis
-    fprintf(fid, '            <h3>RMS per Axis</h3>\n');
-    fprintf(fid, '            <table>\n');
-    fprintf(fid, '                <tr><th>Axis</th><th>RMS</th></tr>\n');
-    fprintf(fid, '                <tr><td>X</td><td>%.4f</td></tr>\n', m.rms_x);
-    fprintf(fid, '                <tr><td>Y</td><td>%.4f</td></tr>\n', m.rms_y);
-    fprintf(fid, '                <tr><td>Z</td><td>%.4f</td></tr>\n', m.rms_z);
-    fprintf(fid, '            </table>\n');
+    Content.TextFrame.TextRange.Text = content_text;
+    Content.TextFrame.TextRange.Font.Size = 14;
     
-    % Axis Statistics
-    fprintf(fid, '            <h3>Axis Statistics</h3>\n');
-    fprintf(fid, '            <table>\n');
-    fprintf(fid, '                <tr><th>Metric</th><th>X</th><th>Y</th><th>Z</th></tr>\n');
-    fprintf(fid, '                <tr><td>Variance</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.var_x, m.var_y, m.var_z);
-    fprintf(fid, '                <tr><td>Peak-to-Peak</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.p2p_x, m.p2p_y, m.p2p_z);
-    fprintf(fid, '                <tr><td>Zero Crossing Rate</td><td>%.4f</td><td>%.4f</td><td>%.4f</td></tr>\n', m.zcr_x, m.zcr_y, m.zcr_z);
-    fprintf(fid, '            </table>\n');
-    
-    % Correlations
-    fprintf(fid, '            <h3>Correlations</h3>\n');
-    fprintf(fid, '            <table>\n');
-    fprintf(fid, '                <tr><th>Axes</th><th>Correlation</th></tr>\n');
-    fprintf(fid, '                <tr><td>X-Y</td><td>%.4f</td></tr>\n', m.corr_xy);
-    fprintf(fid, '                <tr><td>X-Z</td><td>%.4f</td></tr>\n', m.corr_xz);
-    fprintf(fid, '                <tr><td>Y-Z</td><td>%.4f</td></tr>\n', m.corr_yz);
-    fprintf(fid, '            </table>\n');
-    
-    % Add spectrogram images
-    fprintf(fid, '            <h3>Spectrograms</h3>\n');
-    if isfield(result.spectrograms, 'image_path') && exist(result.spectrograms.image_path, 'file')
-        fprintf(fid, '            <img src="%s" alt="Spectrogram - %s">\n', result.spectrograms.image_path, result.file_name);
-    end
+    % Add spectrogram image if available
     if isfield(result.spectrograms, 'magnitude_image_path') && exist(result.spectrograms.magnitude_image_path, 'file')
-        fprintf(fid, '            <img src="%s" alt="Magnitude Spectrogram - %s">\n', result.spectrograms.magnitude_image_path, result.file_name);
+        img_path = fullfile(pwd, result.spectrograms.magnitude_image_path);
+        
+        % Add a new slide for the spectrogram
+        ImgSlide = Presentation.Slides.Add(Presentation.Slides.Count + 1, 11); % Blank layout
+        
+        % Add title manually
+        TitleShape = ImgSlide.Shapes.AddTextbox(1, 50, 30, 600, 50);
+        TitleShape.TextFrame.TextRange.Text = sprintf('Spectrogram: %s', result.file_name);
+        TitleShape.TextFrame.TextRange.Font.Size = 32;
+        TitleShape.TextFrame.TextRange.Font.Bold = true;
+        
+        % Add image
+        ImgSlide.Shapes.AddPicture(img_path, 0, 1, 100, 150, 600, 400);
     end
-    
-    fprintf(fid, '        </div>\n');
-    fprintf(fid, '        <div class="page-break"></div>\n');
 end
